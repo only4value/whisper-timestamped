@@ -44,6 +44,9 @@ def load_model():
 @app.route('/api/whisper/transcribe', methods=['POST'])
 def handler():
     results = []
+    model_name = request.form['model_name']
+    device = request.form['device']
+    loaded_model = whisper.load_model(model_name, device=device)
 
     # Handle uploaded files
     for filename, handle in request.files.items():
@@ -54,15 +57,9 @@ def handler():
         #     return jsonify({'error': 'Model not loaded'}), 500
         if 'model_name' not in request.form or 'device' not in request.form:
             return jsonify({'error': 'Missing model_name or device'}), 400
-        model_name = request.form['model_name']
-        device = request.form['device']
         # if not loaded_model:
         #     return jsonify({'error': 'Model not loaded'}), 500
-        loaded_model = whisper.load_model(model_name, device=device)
         audio = whisper.load_audio(temp.name)
-
-        # model = whisper.load_model("medium.en", device="cpu")
-
         result = whisper.transcribe(loaded_model, audio)
         
         # result = loaded_model.transcribe(temp.name)
@@ -81,8 +78,9 @@ def handler():
             temp = NamedTemporaryFile(delete=False)
             temp.write(response.content)
             temp.close()
-
-            result = loaded_model.transcribe(temp.name)
+            # write same stuff as above
+            audio = whisper.load_audio(temp.name)
+            result = whisper.transcribe(loaded_model, audio)
             results.append({
                 'filename': filename,
                 'transcript': result,
